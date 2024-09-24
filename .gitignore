@@ -1,0 +1,7 @@
+sqlite.db
+.env
+config/credentials/client_secret.json
+
+.idea
+
+go.sum

@@ -1,0 +1,158 @@
+<div>
+    <h1>Create Plan</h1>
+    <h3>Create Template</h3>
+    <div>
+        <input type="text" id="template-input" placeholder="Enter Template">
+        <button onclick="createTemplate()">Create</button>
+    </div>
+
+    <h3>Select Template</h3>
+    <div>
+        <select id="template-select">
+            <option value="">Select a Template</option>
+            {{range .Templates}}
+            <option value="{{.ID}}">{{.Subject}}</option>
+            {{end}}
+        </select>
+        <button onclick="selectTemplate()">Select</button>
+    </div>
+    <div id="template-action-buttons" style="display: none;">
+        <div id="selected-template"></div>
+        <button onclick="useTemplate()">Use</button>
+        <button onclick="editTemplate()">Edit</button>
+    </div>
+
+    <div id="plan-section" style="display: none;">
+        <h3>Plan</h3>
+        <input type="text" id="plan-title" placeholder="Enter Plan Title">
+        <button id="generate-sheet-btn" onclick="generateSheet()">Generate Google Sheet</button>
+        <input type="datetime-local" id="scheduled-at" placeholder="Enter Scheduled At">
+        <div id="loading-message" style="display: none;">구글 시트 생성 중...</div>
+    </div>
+    <div id="sheet-link" style="display: none;"></div>
+    <div id="plan-action-buttons" style="display: none;">
+        <button onclick="createPlan()">Create Plan</button>
+    </div>
+</div>
+<script>
+    let selectedTemplateId = null;
+    let googleSheetId = null;
+
+    function createTemplate() {
+        const templateInput = document.getElementById("template-input");
+        fetch('/v1/plans/templates', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                subject: templateInput.value,
+            }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                const templateSelect = document.getElementById("template-select");
+                const newOption = document.createElement("option");
+                newOption.value = data.id;
+                newOption.text = templateInput.value;
+                templateSelect.appendChild(newOption);
+                templateInput.value = "";
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    function selectTemplate() {
+        const templateSelect = document.getElementById("template-select");
+        selectedTemplateId = templateSelect.value;
+        const selectedText = templateSelect.options[templateSelect.selectedIndex].text;
+
+        if (selectedTemplateId) {
+            document.getElementById("selected-template").innerText = `Selected Template: ${selectedText}`;
+            document.getElementById("template-action-buttons").style.display = "block";
+        } else {
+            alert("Please select a template!");
+        }
+    }
+
+    function useTemplate() {
+        document.getElementById("plan-section").style.display = "block";
+    }
+
+    function editTemplate() {
+        if (selectedTemplateId) {
+            window.open(`${window.location.origin}/plans/templates/${selectedTemplateId}`, '_blank');
+        } else {
+            alert("No template selected.");
+        }
+    }
+
+    function generateSheet() {
+        selectedTemplateId = parseInt(selectedTemplateId);
+        document.getElementById("loading-message").style.display = "block"; // Show loading message
+        fetch('/v1/plans/users/share', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                template_id: selectedTemplateId,
+            }),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to generate Google Sheet');
+                }
+                return response.json();
+            })
+            .then(data => {
+                googleSheetId = data.sheet_id;
+                const sheetLink = document.createElement("a");
+                sheetLink.href = `https://docs.google.com/spreadsheets/d/${googleSheetId}`;
+                sheetLink.target = "_blank";
+                sheetLink.innerText = "Open Google Sheet";
+                document.getElementById("sheet-link").appendChild(sheetLink);
+                document.getElementById("sheet-link").style.display = "block";
+                document.getElementById("loading-message").style.display = "none";
+                removeGenerateSheetButton();
+                addCreatePlanButton();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById("loading-message").style.display = "none";
+            });
+    }
+
+    function removeGenerateSheetButton() {
+        document.getElementById("generate-sheet-btn").style.display = "none";
+    }
+
+    function addCreatePlanButton() {
+        document.getElementById("plan-action-buttons").style.display = "block";
+    }
+
+    function createPlan() {
+        const planTitle = document.getElementById("plan-title").value;
+        let scheduledAt = document.getElementById("scheduled-at").value;
+        if (!scheduledAt) {
+            scheduledAt = null;
+        }
+        fetch('/v1/plans', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: planTitle,
+                template_id: selectedTemplateId,
+                sheet_id: googleSheetId,
+                scheduled_at: scheduledAt,
+            }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert("Plan created successfully!");
+                window.location.href = `/plans/${data.id}`;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+</script>

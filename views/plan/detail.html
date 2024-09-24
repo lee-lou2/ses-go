@@ -1,0 +1,13 @@
+<div>
+    <h1>Plan Details</h1>
+    <p><strong>ID:</strong> {{ .Plan.ID }}</p>
+    <p><strong>Title:</strong> {{ .Plan.Title }}</p>
+    <p><strong>Status:</strong> {{ .Plan.Status }}</p>
+    <p><strong>Sheet URL:</strong>
+        <a href="https://docs.google.com/spreadsheets/d/{{ .Plan.SheetId }}" target="_blank">구글시트로 이동</a>
+    </p>
+    <p><strong>Scheduled At:</strong> {{ if .Plan.ScheduledAt }}{{ .Plan.ScheduledAt.Format "2006-01-02 15:04:05" }}{{ else }}N/A{{ end }}</p>
+    <p><strong>Created At:</strong> {{ .Plan.CreatedAt.Format "2006-01-02 15:04:05" }}</p>
+
+    <a href="/">Back</a>
+</div>
