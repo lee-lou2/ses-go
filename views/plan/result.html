@@ -1,0 +1,61 @@
+<div>
+    <h1>Messages</h1>
+</div>
+{{ if .Messages }}
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>MessageId</th>
+        <th>To</th>
+        <th>Params</th>
+        <th>Status</th>
+        <th>Created At</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .Messages }}
+    <tr>
+        <td>{{ .ID }}</td>
+        <td>{{ .MessageId }}</td>
+        <td>{{ .To }}</td>
+        <td>{{ .Params }}</td>
+        <td>{{ .Status }}</td>
+        <td>{{ .CreatedAt.Format "2006-01-02 15:04:05" }}</td>
+    </tr>
+    {{ end }}
+    </tbody>
+</table>
+{{ else }}
+<p>No results found.</p>
+{{ end }}
+
+<div>
+    <h1>Results</h1>
+</div>
+{{ if .Results }}
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>MessageId</th>
+        <th>Status</th>
+        <th>Raw</th>
+        <th>Created At</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .Results }}
+    <tr>
+        <td>{{ .ID }}</td>
+        <td>{{ .MessageId }}</td>
+        <td>{{ .Status }}</td>
+        <td>{{ .Raw }}</td>
+        <td>{{ .CreatedAt.Format "2006-01-02 15:04:05" }}</td>
+    </tr>
+    {{ end }}
+    </tbody>
+</table>
+{{ else }}
+<p>No results found.</p>
+{{ end }}

@@ -8,6 +8,6 @@
     </p>
     <p><strong>Scheduled At:</strong> {{ if .Plan.ScheduledAt }}{{ .Plan.ScheduledAt.Format "2006-01-02 15:04:05" }}{{ else }}N/A{{ end }}</p>
     <p><strong>Created At:</strong> {{ .Plan.CreatedAt.Format "2006-01-02 15:04:05" }}</p>
-
+    <a href="/plans/{{ .Plan.ID }}/result">Results</a>
     <a href="/">Back</a>
 </div>

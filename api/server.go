@@ -55,6 +55,7 @@ func Run() {
 		template.Use(sessionAuthenticate).Get("/", indexTemplateHandler)
 		template.Use(sessionAuthenticate).Get("/plans", planCreateTemplateHandler)
 		template.Use(sessionAuthenticate).Get("/plans/:id", planDetailTemplateHandler)
+		template.Use(sessionAuthenticate).Get("/plans/:id/result", planResultTemplateHandler)
 		template.Use(sessionAuthenticate).Get("/plans/templates/:id", templateDetailTemplateHandler)
 	}
 

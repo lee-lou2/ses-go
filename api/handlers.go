@@ -175,6 +175,30 @@ func planDetailTemplateHandler(c fiber.Ctx) error {
 	}, "layouts/main")
 }
 
+// planResultTemplateHandler 플랜 결과 템플릿 핸들러
+func planResultTemplateHandler(c fiber.Ctx) error {
+	db := config.GetDB()
+	planId, _ := strconv.Atoi(c.Params("id"))
+	var messages []models.Message
+	if err := db.Where("plan_id = ?", planId).Find(&messages).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	var results []models.MessageResult
+	if len(messages) > 0 {
+		messageIDs := make([]uint, len(messages))
+		for i, message := range messages {
+			messageIDs[i] = message.ID
+		}
+		if err := db.Where("message_id IN ?", messageIDs).Find(&results).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+		}
+	}
+	return c.Render("plan/result", fiber.Map{
+		"Messages": messages,
+		"Results":  results,
+	}, "layouts/main")
+}
+
 // templateDetailTemplateHandler 템플릿 상세 템플릿 핸들러
 func templateDetailTemplateHandler(c fiber.Ctx) error {
 	db := config.GetDB()
