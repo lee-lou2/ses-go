@@ -180,23 +180,26 @@ func planDetailTemplateHandler(c fiber.Ctx) error {
 func planResultTemplateHandler(c fiber.Ctx) error {
 	db := config.GetDB()
 	planId, _ := strconv.Atoi(c.Params("id"))
-	var messages []models.Message
-	if err := db.Where("plan_id = ?", planId).Find(&messages).Error; err != nil {
+	var messagesWithResults []struct {
+		ID        uint      `json:"id"`
+		To        string    `json:"to"`
+		Params    string    `json:"params"`
+		Status    int       `json:"status"`
+		Results   string    `json:"results"`
+		CreatedAt time.Time `json:"created_at"`
+	}
+	err := db.Table("messages").
+		Select(`messages.id, messages."to", messages.params, messages.status, messages.created_at, 
+                GROUP_CONCAT(CONCAT(message_results.status, '(', strftime('%Y-%m-%d %H:%M', message_results.created_at), ')')) as results`).
+		Joins("LEFT JOIN message_results ON messages.id = message_results.message_id").
+		Where("messages.plan_id = ?", planId).
+		Group("messages.id").
+		Scan(&messagesWithResults).Error
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	var results []models.MessageResult
-	if len(messages) > 0 {
-		messageIDs := make([]uint, len(messages))
-		for i, message := range messages {
-			messageIDs[i] = message.ID
-		}
-		if err := db.Where("message_id IN ?", messageIDs).Find(&results).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-		}
-	}
 	return c.Render("plan/result", fiber.Map{
-		"Messages": messages,
-		"Results":  results,
+		"Messages": messagesWithResults,
 	}, "layouts/main")
 }
 
