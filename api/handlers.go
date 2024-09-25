@@ -3,12 +3,12 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"image"
 	"image/color"
 	"image/png"
+	"log"
 	"ses-go/config"
 	"ses-go/models"
 	"ses-go/pkg/google"
@@ -276,12 +276,11 @@ func addOpenEventHandler(c fiber.Ctx) error {
 
 // addSendEventHandler 전송 이벤트 핸들러
 func addSendEventHandler(c fiber.Ctx) error {
-	fmt.Println(c.Body())
 	body := new(reqAddSendEvent)
 	if err := c.Bind().JSON(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
-	fmt.Println(body)
+	log.Println(body)
 	if body.Type != "Notification" {
 		return c.JSON(fiber.Map{})
 	}

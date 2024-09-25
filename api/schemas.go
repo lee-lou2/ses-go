@@ -45,7 +45,8 @@ type respUpdateTemplate struct {
 
 // reqAddSendEvent 발송 이벤트 추가 요청
 type reqAddSendEvent struct {
-	Type      string `json:"Type"`
-	MessageId string `json:"MessageId"`
-	Message   string `json:"Message"`
+	Type         string `json:"Type"`
+	MessageId    string `json:"MessageId"`
+	Message      string `json:"Message"`
+	SubscribeURL string `json:"SubscribeURL"`
 }
