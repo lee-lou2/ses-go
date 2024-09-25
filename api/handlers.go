@@ -280,27 +280,37 @@ func addSendEventHandler(c fiber.Ctx) error {
 	if err := c.Bind().JSON(&body); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
-	log.Println(body)
-	if body.Type != "Notification" {
+	if body.Type == "SubscriptionConfirmation" {
+		log.Println(body.SubscribeURL)
 		return c.JSON(fiber.Map{})
+	} else if body.Type != "Notification" {
+		return c.JSON(fiber.Map{})
+	}
+
+	// 메세지 조회
+	var bodyMessage struct {
+		EventType string `json:"eventType"`
+		Mail      struct {
+			MessageId string `json:"messageId"`
+		} `json:"mail"`
+	}
+	if err := json.Unmarshal([]byte(body.Message), &bodyMessage); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	// 메세지 조회
 	db := config.GetDB()
 	var message models.Message
-	if err := db.Where("message_id = ?", body.MessageId).First(&message).Error; err != nil {
+	if err := db.Where("message_id = ?", bodyMessage.Mail.MessageId).First(&message).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	// 결과 저장
-	var result models.MessageResult
-	result.MessageId = message.ID
-	var detail map[string]interface{}
-	if err := json.Unmarshal([]byte(body.Message), &detail); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	result := models.MessageResult{
+		MessageId: message.ID,
+		Status:    bodyMessage.EventType,
+		Raw:       body.Message,
 	}
-	result.Status = detail["eventType"].(string)
-	result.Raw = body.Message
 	_ = db.Create(&result).Error
 	return c.JSON(fiber.Map{})
 }
