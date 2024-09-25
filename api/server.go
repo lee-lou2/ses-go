@@ -33,8 +33,8 @@ func Run() {
 		}
 		event := v1.Group("/events")
 		{
-			event.Get("/open/", addOpenEventHandler)
-			event.Get("/send/", addSendEventHandler)
+			event.Get("/open", addOpenEventHandler)
+			event.Post("/send", addSendEventHandler)
 		}
 		plan := v1.Group("/plans")
 		{
