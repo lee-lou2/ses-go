@@ -11,8 +11,7 @@
 - GoFiber
 - AWS SES(이메일 발송)
 - AWS SNS(발송 결과 조회)
-- Google Sheets API(발송 대상 관리)
-- Google Drive API(구글시트 권한 제어)
+- handsontable(발송 대상 관리)
 - Google OAuth2(구글 로그인)
 
 ## 사용 기술
@@ -49,9 +48,9 @@
 
 ### 발송 대상
 
-- 템플릿을 지정하면 해당 템플릿의 변수에 대한 컬럼이 추가된 구글시트가 자동 생성
-- 생성을 요청한 관리자의 이메일 주소로 [쓰기] 권한이 자동으로 부여됨
-- 발송 대상을 해당 구글시트에 입력하면 메세지 발송 시 조회해서 발송
+- 템플릿을 지정하면 해당 템플릿의 변수에 대한 컬럼이 자동 추가
+- 발송 대상은 `handsontable` 오픈소스를 활용해 쉽게 관리
+- 오픈소스 테이블로 설정된 데이터를 데이터베이스에 저장하고 조회해서 발송
 
 ### 발송 계획
 
@@ -60,7 +59,7 @@
 ### 발송 전
 
 - n초 간격으로 현재 시간 기준 발송되어야할 발송 계획이 있는지 조회
-- 발송 계획이 있으면 구글시트를 조회해서 발송 대상을 조회
+- 발송 계획이 있으면 데이터베이스 발송 대상을 조회
 - 조회된 발송 대상에 대한 개별 메세지 객체를 생성하여 데이터베이스에 저장
 - 생성된 객체를 채널을 이용해서 실제 발송하는 컨슈머로 전달
 
@@ -100,14 +99,6 @@ GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URL=
 
-# 구글 서비스 계정 설정
-GOOGLE_SERVICE_ACCOUNT_PROJECT_ID=
-GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID=
-GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY=
-GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL=
-GOOGLE_SERVICE_ACCOUNT_CLIENT_ID=
-GOOGLE_SERVICE_ACCOUNT_CLIENT_X509_CERT_URL=
-
 # TinyMCE API Key
 TINYMCE_API_KEY=
 ```
@@ -134,11 +125,9 @@ $ ./ses-go
 
 9. 발송 계획 제목 입력
 
-10. [Generate Google Sheet] 클릭
+10. 표에 발송 대상 입력
 
-11. 생성된 구글시트에 발송 대상 입력
-
-![img_1.png](docs/img_1.png)
+11. 대상 작성 후 [save] 클릭
 
 12. [Create Plan] 클릭
 

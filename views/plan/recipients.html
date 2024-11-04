@@ -1,0 +1,31 @@
+<div>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css">
+  <h1>Recipients</h1>
+  <div id="recipients"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
+  <script>
+    // 데이터 초기화
+    const data = {{.Recipients}};
+    // 최대 열 수 계산 
+    const maxCols = data[0].length;
+
+    // Handsontable 초기화
+    const container = document.getElementById('recipients');
+    const hot = new Handsontable(container, {
+      data: data,
+      rowHeaders: true,
+      colHeaders: true,
+      contextMenu: true,
+      licenseKey: 'non-commercial-and-evaluation',
+      fixedRowsTop: 1,
+      maxCols: maxCols,
+      readOnly: true, // 모든 셀을 읽기 전용으로 설정
+      cells: function(row, col) {
+        return {
+          readOnly: true // 각 셀을 읽기 전용으로 설정
+        };
+      }
+    });
+  </script>
+</div>

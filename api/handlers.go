@@ -3,8 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gofiber/fiber/v3"
-	"github.com/google/uuid"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -14,19 +13,23 @@ import (
 	"ses-go/pkg/google"
 	"strconv"
 	"time"
+
+	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 )
 
 // createPlanHandler 플랜 생성 핸들러
 func createPlanHandler(c fiber.Ctx) error {
 	body := new(reqCreatePlan)
 	if err := c.Bind().JSON(&body); err != nil {
+		fmt.Println(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	db := config.GetDB()
 	plan := models.Plan{
 		Title:       body.Title,
 		TemplateId:  body.TemplateId,
-		SheetId:     body.SheetId,
+		RecipientId: body.RecipientId,
 		ScheduledAt: nil,
 	}
 	// 스케줄링 시간이 있으면 파싱
@@ -99,39 +102,6 @@ func googleCallbackHandler(c fiber.Ctx) error {
 	return c.Redirect().To("/")
 }
 
-// createSheetAndShareHandler 시트 생성 및 공유 핸들러
-func createSheetAndShareHandler(c fiber.Ctx) error {
-	body := new(reqCreateSheetAndShare)
-	if err := c.Bind().JSON(&body); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
-	// 파라미터 추출
-	db := config.GetDB()
-	var template models.Template
-	if err := db.Where("id = ?", body.TemplateId).First(&template).Error; err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
-	// 컬럼 생성
-	var columns []string
-	params := template.GetParams()
-	columns = append(columns, "email")
-	for _, param := range *params {
-		if param != "email" {
-			columns = append(columns, param)
-		}
-	}
-
-	// 시트 생성 및 공유
-	email := fiber.Locals[models.User](c, "user").Email
-	sheetId, err := google.CreateSheetAndShare(email, &columns)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.JSON(respCreateSheetAndShare{
-		SheetId: sheetId,
-	})
-}
-
 // logoutHandler 로그아웃 핸들러
 func logoutHandler(c fiber.Ctx) error {
 	db := config.GetDB()
@@ -170,7 +140,11 @@ func planCreateTemplateHandler(c fiber.Ctx) error {
 func planDetailTemplateHandler(c fiber.Ctx) error {
 	db := config.GetDB()
 	var plan models.Plan
-	db.First(&plan, c.Params("id"))
+	planId := c.Params("planId")
+	planIdUint, _ := strconv.Atoi(planId)
+	if err := db.Preload("Template").Preload("Recipient").First(&plan, planIdUint).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
 	return c.Render("plan/detail", fiber.Map{
 		"Plan": plan,
 	}, "layouts/main")
@@ -179,7 +153,8 @@ func planDetailTemplateHandler(c fiber.Ctx) error {
 // planResultTemplateHandler 플랜 결과 템플릿 핸들러
 func planResultTemplateHandler(c fiber.Ctx) error {
 	db := config.GetDB()
-	planId, _ := strconv.Atoi(c.Params("id"))
+	planId := c.Params("planId")
+	planIdUint, _ := strconv.Atoi(planId)
 	var messagesWithResults []struct {
 		ID        uint      `json:"id"`
 		To        string    `json:"to"`
@@ -192,7 +167,7 @@ func planResultTemplateHandler(c fiber.Ctx) error {
 		Select(`messages.id, messages."to", messages.params, messages.status, messages.created_at, 
                 GROUP_CONCAT(CONCAT(message_results.status, '(', strftime('%Y-%m-%d %H:%M', message_results.created_at), ')')) as results`).
 		Joins("LEFT JOIN message_results ON messages.id = message_results.message_id").
-		Where("messages.plan_id = ?", planId).
+		Where("messages.plan_id = ?", planIdUint).
 		Group("messages.id").
 		Scan(&messagesWithResults).Error
 	if err != nil {
@@ -207,7 +182,9 @@ func planResultTemplateHandler(c fiber.Ctx) error {
 func templateDetailTemplateHandler(c fiber.Ctx) error {
 	db := config.GetDB()
 	var template models.Template
-	db.First(&template, c.Params("id"))
+	templateId := c.Params("templateId")
+	templateIdUint, _ := strconv.Atoi(templateId)
+	db.First(&template, templateIdUint)
 	tinymceApiKey := config.GetEnv("TINYMCE_API_KEY")
 	return c.Render("plan/template", fiber.Map{
 		"Template":      template,
@@ -243,7 +220,9 @@ func updateTemplateHandler(c fiber.Ctx) error {
 	}
 	db := config.GetDB()
 	var template models.Template
-	if err := db.First(&template, c.Params("id")).Error; err != nil {
+	templateId := c.Params("templateId")
+	templateIdUint, _ := strconv.Atoi(templateId)
+	if err := db.First(&template, templateIdUint).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	template.Body = body.Body
@@ -316,4 +295,109 @@ func addSendEventHandler(c fiber.Ctx) error {
 	}
 	_ = db.Create(&result).Error
 	return c.JSON(fiber.Map{})
+}
+
+// initRecipientsDataHandler 수신자 데이터 초기화 핸들러
+func initRecipientsDataHandler(c fiber.Ctx) error {
+	// 기본 컬럼은 email
+	columns := []string{"email"}
+
+	// DB 연결 가져오기
+	db := config.GetDB()
+
+	// 템플릿 모델 변수 선언
+	var template models.Template
+
+	// URL 파라미터에서 템플릿 ID를 가져와 DB에서 해당 템플릿 조회
+	templateId := c.Params("templateId")
+	templateIdUint, _ := strconv.Atoi(templateId)
+	if err := db.Where("id = ?", templateIdUint).First(&template).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	// 템플릿에서 파라미터 가져오기
+	params := template.GetParams()
+
+	// 기본 컬럼에 템플릿 파라미터 추가
+	columns = append(columns, *params...)
+
+	// 수신자 데이터 초기화 (헤더 포함 11행)
+	recipients := [][]string{
+		columns,
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+		make([]string, len(columns)),
+	}
+	return c.JSON(respInitRecipientsData{
+		Data: recipients,
+	})
+}
+
+// getRecipientsTemplateHandler 발송 대상 상세 템플릿 핸들러
+func getRecipientsTemplateHandler(c fiber.Ctx) error {
+	// DB 연결 가져오기
+	db := config.GetDB()
+	// 수신자 모델 변수 선언
+	var recipients models.Recipient
+	// URL 파라미터에서 수신자 ID와 템플릿 ID 가져오기
+	recipientId := c.Params("recipientId")
+	recipientIdUint, _ := strconv.Atoi(recipientId)
+	templateId := c.Params("templateId")
+	templateIdUint, _ := strconv.Atoi(templateId)
+	query := db.Where("id = ?", recipientIdUint).Where("template_id = ?", templateIdUint)
+	// 생성자이거나 뷰어인 경우 조회 가능
+	user := fiber.Locals[models.User](c, "user")
+	query = query.Where("creator_id = ? OR id IN (SELECT recipient_id FROM recipient_viewers WHERE user_id = ?)", user.ID, user.ID)
+	if err := query.First(&recipients).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	// data 를 json 으로 변환해서 리스트로 반환
+	var data [][]string
+	// JSON 문자열을 2차원 문자열 배열로 변환
+	if err := json.Unmarshal([]byte(recipients.Data), &data); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	// 템플릿 렌더링하여 응답 반환
+	return c.Render("plan/recipients", fiber.Map{
+		"Recipients": data,
+		"TemplateId": templateIdUint,
+	}, "layouts/main")
+}
+
+// createRecipientsHandler 수신자 생성 핸들러
+func createRecipientsHandler(c fiber.Ctx) error {
+	// URL 파라미터에서 템플릿 ID를 가져옴
+	templateId := c.Params("templateId")
+	// 요청 바디를 파싱
+	body := new(reqCreateRecipients)
+	if err := c.Bind().JSON(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	// DB 연결 가져오기
+	db := config.GetDB()
+	// 문자열 템플릿 ID를 uint로 변환
+	templateIdUint, _ := strconv.Atoi(templateId)
+	// 수신자 모델 생성
+	user := fiber.Locals[models.User](c, "user")
+	recipient := models.Recipient{
+		TemplateId: uint(templateIdUint),
+		Data:       body.Data,
+		CreatorId:  user.ID,
+	}
+	// DB에 수신자 데이터 저장
+	err := db.Create(&recipient).Error
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	// 생성된 수신자의 ID를 응답으로 반환
+	return c.JSON(fiber.Map{
+		"id": recipient.ID,
+	})
 }

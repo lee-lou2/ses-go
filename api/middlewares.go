@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/gofiber/fiber/v3"
 	"ses-go/config"
 	"ses-go/models"
 	"time"
+
+	"github.com/gofiber/fiber/v3"
 )
 
 func sessionAuthenticate(c fiber.Ctx) error {

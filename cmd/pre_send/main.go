@@ -3,14 +3,14 @@ package pre_send
 import (
 	"context"
 	"encoding/json"
-	"gorm.io/gorm"
 	"log"
 	"ses-go/cmd/post_send"
 	"ses-go/cmd/send"
 	"ses-go/config"
 	"ses-go/models"
-	"ses-go/pkg/google"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // Run 메세지 전 처리
@@ -23,7 +23,7 @@ func Run() {
 		var plan models.Plan
 
 		// Plan 조회 및 상태 업데이트
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").Where("(status = 0 AND scheduled_at is null) OR (status = 0 AND scheduled_at <= ?)", time.Now()).First(&plan).Error; err != nil {
+		if err := tx.Set("gorm:query_option", "FOR UPDATE").Preload("Recipient").Where("(status = 0 AND scheduled_at is null) OR (status = 0 AND scheduled_at <= ?)", time.Now()).First(&plan).Error; err != nil {
 			tx.Rollback()
 			continue
 		}
@@ -36,16 +36,35 @@ func Run() {
 
 		// 메시지 생성
 		var messages []models.Message
-		if err := google.GetEmailsFromSheet(plan.SheetId, &messages); err != nil {
-			// 메시지 생성 실패 시 상태를 업데이트하기 위해 트랜잭션 사용
+		var data [][]string
+		if err := json.Unmarshal([]byte(plan.Recipient.Data), &data); err != nil {
 			updatePlanStatus(db, &plan, 5)
 			continue
 		}
+		columns := data[0]
+		for i, row := range data {
+			// 첫번째 행은 컬럼명이므로 스킵
+			if i == 0 {
+				continue
+			}
+			// 이메일이 없는 행은 스킵
+			if row[0] == "" {
+				continue
+			}
+			params := make(map[string]string)
+			params["email"] = row[0]
+			for j := 1; j < len(row); j++ {
+				params[columns[j]] = row[j]
+			}
+			paramsStr, _ := json.Marshal(params)
+			messages = append(messages, models.Message{
+				To:     row[0],
+				Params: string(paramsStr),
+				PlanId: plan.ID,
+			})
+		}
 
 		// messages bulk create
-		for m := range messages {
-			messages[m].PlanId = plan.ID
-		}
 		for i := 0; i < len(messages); i += 1000 {
 			minLimit := len(messages)
 			if minLimit > i+1000 {

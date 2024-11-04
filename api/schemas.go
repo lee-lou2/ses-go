@@ -4,23 +4,13 @@ package api
 type reqCreatePlan struct {
 	Title       string `json:"title"`
 	TemplateId  uint   `json:"template_id"`
-	SheetId     string `json:"sheet_id"`
+	RecipientId uint   `json:"recipient_id"`
 	ScheduledAt string `json:"scheduled_at"`
 }
 
 // respCreatePlan 플랜 생성 응답
 type respCreatePlan struct {
 	Id uint `json:"id"`
-}
-
-// reqCreateSheetAndShare 시트 생성 및 공유 요청
-type reqCreateSheetAndShare struct {
-	TemplateId uint `json:"template_id"`
-}
-
-// respCreateSheetAndShare 시트 생성 및 공유 응답
-type respCreateSheetAndShare struct {
-	SheetId string `json:"sheet_id"`
 }
 
 // reqCreateTemplate 템플릿 생성 요청
@@ -48,4 +38,14 @@ type reqAddSendEvent struct {
 	Type         string `json:"Type"`
 	Message      string `json:"Message"`
 	SubscribeURL string `json:"SubscribeURL"`
+}
+
+// reqCreateRecipients 수신자 생성 요청
+type reqCreateRecipients struct {
+	Data string `json:"data"`
+}
+
+// respInitRecipientsData 수신자 초기화 응답
+type respInitRecipientsData struct {
+	Data [][]string `json:"data"`
 }

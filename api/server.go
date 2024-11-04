@@ -1,12 +1,13 @@
 package api
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/pprof"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/gofiber/template/html/v2"
-	"log"
 )
 
 // Run 서버 실행
@@ -39,11 +40,12 @@ func Run() {
 		plan := v1.Group("/plans")
 		{
 			plan.Use(sessionAuthenticate).Post("/", createPlanHandler)
-			plan.Use(sessionAuthenticate).Post("/users/share", createSheetAndShareHandler)
 			template := plan.Group("/templates")
 			{
 				template.Use(sessionAuthenticate).Post("/", createTemplateHandler)
-				template.Use(sessionAuthenticate).Put("/:id", updateTemplateHandler)
+				template.Use(sessionAuthenticate).Put("/:templateId", updateTemplateHandler)
+				template.Use(sessionAuthenticate).Get("/:templateId/recipients", initRecipientsDataHandler)
+				template.Use(sessionAuthenticate).Post("/:templateId/recipients", createRecipientsHandler)
 			}
 		}
 	}
@@ -54,10 +56,10 @@ func Run() {
 		template.Get("/accounts/login", loginTemplateHandler)
 		template.Use(sessionAuthenticate).Get("/", indexTemplateHandler)
 		template.Use(sessionAuthenticate).Get("/plans", planCreateTemplateHandler)
-		template.Use(sessionAuthenticate).Get("/plans/:id", planDetailTemplateHandler)
-		template.Use(sessionAuthenticate).Get("/plans/:id/result", planResultTemplateHandler)
-		template.Use(sessionAuthenticate).Get("/plans/templates/:id", templateDetailTemplateHandler)
+		template.Use(sessionAuthenticate).Get("/plans/templates/:templateId/recipients/:recipientId", getRecipientsTemplateHandler)
+		template.Use(sessionAuthenticate).Get("/plans/templates/:templateId", templateDetailTemplateHandler)
+		template.Use(sessionAuthenticate).Get("/plans/:planId", planDetailTemplateHandler)
+		template.Use(sessionAuthenticate).Get("/plans/:planId/result", planResultTemplateHandler)
 	}
-
 	log.Fatal(app.Listen(":3000"))
 }

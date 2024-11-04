@@ -1,4 +1,5 @@
 <div>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css">
     <h1>Create Plan</h1>
     <h3>Create Template</h3>
     <div>
@@ -19,24 +20,27 @@
     <div id="template-action-buttons" style="display: none;">
         <div id="selected-template"></div>
         <button onclick="useTemplate()">Use</button>
-        <button onclick="editTemplate()">Edit</button>
+        <button onclick="editTemplate()" id="edit-template-btn">Edit</button>
     </div>
 
     <div id="plan-section" style="display: none;">
         <h3>Plan</h3>
         <input type="text" id="plan-title" placeholder="Enter Plan Title">
-        <button id="generate-sheet-btn" onclick="generateSheet()">Generate Google Sheet</button>
         <input type="datetime-local" id="scheduled-at" placeholder="Enter Scheduled At">
-        <div id="loading-message" style="display: none;">구글 시트 생성 중...</div>
+        <div id="recipients"></div>
+        <button onclick="saveData()">Save</button>
+        <button onclick="addRow()">Add Row</button>
     </div>
     <div id="sheet-link" style="display: none;"></div>
     <div id="plan-action-buttons" style="display: none;">
         <button onclick="createPlan()">Create Plan</button>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
 <script>
     let selectedTemplateId = null;
-    let googleSheetId = null;
+    let selectedRecipientId = null;
+    let hot = null;
 
     function createTemplate() {
         const templateInput = document.getElementById("template-input");
@@ -74,10 +78,6 @@
         }
     }
 
-    function useTemplate() {
-        document.getElementById("plan-section").style.display = "block";
-    }
-
     function editTemplate() {
         if (selectedTemplateId) {
             window.open(`${window.location.origin}/plans/templates/${selectedTemplateId}`, '_blank');
@@ -86,48 +86,12 @@
         }
     }
 
-    function generateSheet() {
-        selectedTemplateId = parseInt(selectedTemplateId);
-        document.getElementById("loading-message").style.display = "block"; // Show loading message
-        fetch('/v1/plans/users/share', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                template_id: selectedTemplateId,
-            }),
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to generate Google Sheet');
-                }
-                return response.json();
-            })
-            .then(data => {
-                googleSheetId = data.sheet_id;
-                const sheetLink = document.createElement("a");
-                sheetLink.href = `https://docs.google.com/spreadsheets/d/${googleSheetId}`;
-                sheetLink.target = "_blank";
-                sheetLink.innerText = "Open Google Sheet";
-                document.getElementById("sheet-link").appendChild(sheetLink);
-                document.getElementById("sheet-link").style.display = "block";
-                document.getElementById("loading-message").style.display = "none";
-                removeGenerateSheetButton();
-                addCreatePlanButton();
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById("loading-message").style.display = "none";
-            });
-    }
-
-    function removeGenerateSheetButton() {
-        document.getElementById("generate-sheet-btn").style.display = "none";
-    }
-
-    function addCreatePlanButton() {
-        document.getElementById("plan-action-buttons").style.display = "block";
+    function useTemplate() {
+        if (document.getElementById("plan-section").style.display === "none") {
+            document.getElementById("plan-section").style.display = "block";
+            setDefaultData();
+            document.getElementById("edit-template-btn").style.display = "none";
+        }
     }
 
     function createPlan() {
@@ -136,23 +100,85 @@
         if (!scheduledAt) {
             scheduledAt = null;
         }
-        fetch('/v1/plans', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                title: planTitle,
-                template_id: selectedTemplateId,
-                sheet_id: googleSheetId,
-                scheduled_at: scheduledAt,
-            }),
-        })
-            .then(response => response.json())
-            .then(data => {
+        if (selectedTemplateId && selectedRecipientId) {
+            fetch('/v1/plans', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: planTitle,
+                    template_id: parseInt(selectedTemplateId),
+                    recipient_id: parseInt(selectedRecipientId),
+                    scheduled_at: scheduledAt,
+                }),
+            })
+                .then(response => response.json())
+                .then(data => {
                 alert("Plan created successfully!");
                 window.location.href = `/plans/${data.id}`;
             })
-            .catch(error => console.error('Error:', error));
+                .catch(error => console.error('Error:', error));
+        } else {
+            alert("Please select a template and recipient!");
+        }
     }
-</script>
+
+    function setDefaultData() {
+        // /v1/plans/templates/{templateId}/recipients/ 로 데이터 조회
+        if (selectedTemplateId) {
+            fetch(`${window.location.origin}/v1/plans/templates/${selectedTemplateId}/recipients`)
+                .then(response => response.json())
+            .then(data => {
+                // 최대 열 수 계산
+                const maxCols = data.data[0].length;
+
+                // Handsontable 초기화
+                const container = document.getElementById('recipients');
+                hot = new Handsontable(container, {
+                data: data.data,
+                rowHeaders: true,
+                colHeaders: true,
+                contextMenu: true,
+                licenseKey: 'non-commercial-and-evaluation',
+                fixedRowsTop: 1,
+                maxCols: maxCols,
+                cells: function(row, col) {
+                    if (row === 0) {
+                    return {
+                        readOnly: true
+                    };
+                    }
+                }
+                });
+            });
+        }
+    }
+
+    // 저장 함수 추가
+    function saveData() {
+      const data = hot.getData();
+      fetch(`/v1/plans/templates/${selectedTemplateId}/recipients`, {
+        method: 'POST',
+        body: JSON.stringify({
+          data: JSON.stringify(data)
+        })
+      }).then(res => res.json()).then(data => {
+        selectedRecipientId = data.id;
+        document.getElementById("plan-action-buttons").style.display = "block";
+      });
+    }
+
+    // 키보드 이벤트 리스너 추가
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault(); // 브라우저 기본 저장 동작 방지
+        saveData();
+      }
+    });
+
+    // 행 추가 함수
+    function addRow() {
+        hot.alter('insert_row_below', hot.countRows() - 1);
+    }
+  </script>
