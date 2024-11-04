@@ -1,4 +1,4 @@
-package api
+package middlewares
 
 import (
 	"ses-go/config"
@@ -8,7 +8,8 @@ import (
 	"github.com/gofiber/fiber/v3"
 )
 
-func sessionAuthenticate(c fiber.Ctx) error {
+// SessionAuthenticate 세션 인증
+func SessionAuthenticate(c fiber.Ctx) error {
 	session := c.Cookies("session")
 	// 세션 확인
 	db := config.GetDB()
