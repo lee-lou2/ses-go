@@ -1,0 +1,61 @@
+<div>
+    <h1>토큰 목록</h1>
+    <div style="margin-bottom: 20px;">
+        <button onclick="createToken()">토큰 생성</button>
+    </div>
+    <div id="newTokenArea" style="display: none; margin-bottom: 20px;">
+        <label>새 토큰:</label>
+        <input type="text" id="newToken" readonly style="width: 500px; margin-right: 10px;">
+        <button onclick="copyToken()">복사</button>
+    </div>
+</div>
+{{ if .Tokens }}
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>토큰</th>
+        <th>생성일</th>
+    </tr>
+    </thead>
+    <tbody>
+    {{ range .Tokens }}
+    <tr>
+        <td>{{ .ID }}</td>
+        <td>{{ .Token }}</td>
+        <td>{{ .CreatedAt.Format "2006-01-02 15:04:05" }}</td>
+    </tr>
+    {{ end }}
+    </tbody>
+</table>
+{{ else }}
+<p>토큰이 없습니다.</p>
+{{ end }}
+
+<script>
+async function createToken() {
+    try {
+        const response = await fetch('/v1/auth/tokens', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        if (data.token) {
+            document.getElementById('newToken').value = data.token;
+            document.getElementById('newTokenArea').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('토큰 생성 중 오류가 발생했습니다.');
+    }
+}
+
+function copyToken() {
+    const tokenInput = document.getElementById('newToken');
+    tokenInput.select();
+    document.execCommand('copy');
+    alert('토큰이 클립보드에 복사되었습니다.');
+}
+</script>

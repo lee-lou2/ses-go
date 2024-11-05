@@ -19,5 +19,6 @@ type message struct {
 	Ctx       context.Context
 }
 
-// messages 메시지 채널
-var messages = make(chan message, 1000)
+const messageBufferSize = 1000
+
+var messages = make(chan message, messageBufferSize)

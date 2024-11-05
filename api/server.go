@@ -21,7 +21,9 @@ func Run() {
 	// Middleware
 	app.Use(requestid.New())
 	app.Use(logger.New(logger.Config{
-		Format: "${pid} ${locals:requestid} ${status} - ${method} ${path}\n",
+		Format:     "${time} ${pid} ${locals:requestid} ${status} - ${method} ${path} ${latency}\n",
+		TimeFormat: "2006-01-02 15:04:05",
+		TimeZone:   "Local",
 	}))
 	app.Use(pprof.New())
 

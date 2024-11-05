@@ -1,8 +1,16 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"ses-go/config"
+
+	"gorm.io/gorm"
+)
+
+const (
+	MessageStatusCreated = 0
+	MessageStatusSent    = 1
+	MessageStatusFailed  = 2
+	MessageStatusStopped = 3
 )
 
 type Message struct {

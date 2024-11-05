@@ -30,7 +30,7 @@ func PlanCreateHTMLRenderHandler(c fiber.Ctx) error {
 	db := config.GetDB()
 	var templates []models.Template
 	db.Find(&templates).Order("id desc")
-	return c.Render("plan/create", fiber.Map{
+	return c.Render("plans/create", fiber.Map{
 		"Templates": templates,
 	}, "layouts/main")
 }
@@ -44,7 +44,7 @@ func PlanDetailHTMLRenderHandler(c fiber.Ctx) error {
 	if err := db.Preload("Template").Preload("Recipient").First(&plan, planIdUint).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Render("plan/detail", fiber.Map{
+	return c.Render("plans/detail", fiber.Map{
 		"Plan": plan,
 	}, "layouts/main")
 }
@@ -72,7 +72,7 @@ func PlanResultHTMLRenderHandler(c fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
-	return c.Render("plan/result", fiber.Map{
+	return c.Render("plans/result", fiber.Map{
 		"Messages": messagesWithResults,
 	}, "layouts/main")
 }
@@ -85,7 +85,7 @@ func TemplateDetailHTMLRenderHandler(c fiber.Ctx) error {
 	templateIdUint, _ := strconv.Atoi(templateId)
 	db.First(&template, templateIdUint)
 	tinymceApiKey := config.GetEnv("TINYMCE_API_KEY")
-	return c.Render("plan/template", fiber.Map{
+	return c.Render("plans/template", fiber.Map{
 		"Template":      template,
 		"TinymceApiKey": tinymceApiKey,
 	}, "layouts/main")
@@ -116,8 +116,19 @@ func GetRecipientsHTMLRenderHandler(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	// 템플릿 렌더링하여 응답 반환
-	return c.Render("plan/recipients", fiber.Map{
+	return c.Render("plans/recipients", fiber.Map{
 		"Recipients": data,
 		"TemplateId": templateIdUint,
+	}, "layouts/main")
+}
+
+// TokenHTMLRenderHandler 토큰 템플릿 핸들러
+func TokenHTMLRenderHandler(c fiber.Ctx) error {
+	user := fiber.Locals[models.User](c, "user")
+	var tokens []models.UserToken
+	db := config.GetDB()
+	db.Where("user_id = ?", user.ID).Find(&tokens)
+	return c.Render("tokens/index", fiber.Map{
+		"Tokens": tokens,
 	}, "layouts/main")
 }

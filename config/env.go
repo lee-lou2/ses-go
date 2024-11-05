@@ -1,9 +1,11 @@
 package config
 
 import (
-	"github.com/joho/godotenv"
+	"log"
 	"os"
 	"sync"
+
+	"github.com/joho/godotenv"
 )
 
 var envOnce sync.Once
@@ -11,7 +13,9 @@ var envOnce sync.Once
 // GetEnv 환경 변수 조회
 func GetEnv(key string, defaults ...string) string {
 	envOnce.Do(func() {
-		_ = godotenv.Load()
+		if err := godotenv.Load(); err != nil {
+			log.Printf("Warning: .env file not found or error loading: %v", err)
+		}
 	})
 	if len(defaults) > 0 {
 		if value := os.Getenv(key); value != "" {

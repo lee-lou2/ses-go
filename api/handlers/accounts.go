@@ -58,6 +58,8 @@ func GoogleCallbackHandler(c fiber.Ctx) error {
 		Value:    uuidStr,
 		Expires:  time.Now().Add(time.Hour * 24),
 		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
 	})
 	return c.Redirect().To("/")
 }

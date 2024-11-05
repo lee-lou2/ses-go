@@ -15,7 +15,8 @@ func SetV1Routes(app *fiber.App) {
 		{
 			auth.Get("/google/", handlers.GoogleAuthHandler)
 			auth.Get("/google/callback/", handlers.GoogleCallbackHandler)
-			auth.Use(middlewares.SessionAuthenticate).Get("/logout", handlers.LogoutHandler)
+			auth.Get("/logout", middlewares.SessionAuthenticate, handlers.LogoutHandler)
+			auth.Post("/tokens", middlewares.SessionAuthenticate, handlers.CreateTokenHandler)
 		}
 		event := v1.Group("/events")
 		{
@@ -24,13 +25,13 @@ func SetV1Routes(app *fiber.App) {
 		}
 		plan := v1.Group("/plans")
 		{
-			plan.Use(middlewares.SessionAuthenticate).Post("/", handlers.CreatePlanHandler)
+			plan.Post("/", middlewares.SessionOrTokenAuthenticate, handlers.CreatePlanHandler)
 			template := plan.Group("/templates")
 			{
-				template.Use(middlewares.SessionAuthenticate).Post("/", handlers.CreateTemplateHandler)
-				template.Use(middlewares.SessionAuthenticate).Put("/:templateId", handlers.UpdateTemplateHandler)
-				template.Use(middlewares.SessionAuthenticate).Get("/:templateId/recipients", handlers.InitRecipientsDataHandler)
-				template.Use(middlewares.SessionAuthenticate).Post("/:templateId/recipients", handlers.CreateRecipientHandler)
+				template.Post("/", middlewares.SessionAuthenticate, handlers.CreateTemplateHandler)
+				template.Put("/:templateId", middlewares.SessionAuthenticate, handlers.UpdateTemplateHandler)
+				template.Get("/:templateId/fields", middlewares.SessionAuthenticate, handlers.GetTemplateFieldsHandler)
+				template.Post("/:templateId/recipients", middlewares.SessionOrTokenAuthenticate, handlers.CreateRecipientHandler)
 			}
 		}
 	}

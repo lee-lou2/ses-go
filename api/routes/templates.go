@@ -18,5 +18,6 @@ func SetTemplateRoutes(app *fiber.App) {
 		template.Use(middlewares.SessionAuthenticate).Get("/plans/templates/:templateId", handlers.TemplateDetailHTMLRenderHandler)
 		template.Use(middlewares.SessionAuthenticate).Get("/plans/:planId", handlers.PlanDetailHTMLRenderHandler)
 		template.Use(middlewares.SessionAuthenticate).Get("/plans/:planId/result", handlers.PlanResultHTMLRenderHandler)
+		template.Use(middlewares.SessionAuthenticate).Get("/tokens", handlers.TokenHTMLRenderHandler)
 	}
 }

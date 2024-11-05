@@ -1,8 +1,10 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"ses-go/config"
+	"time"
+
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -26,8 +28,21 @@ func (us *UserSession) TableName() string {
 	return "user_sessions"
 }
 
+type UserToken struct {
+	gorm.Model
+	UserId uint      `json:"user_id" gorm:"index;not null"`
+	User   User      `json:"user" gorm:"foreignKey:UserId;references:ID"`
+	Token  string    `json:"token" gorm:"unique;not null;type:varchar(100)"`
+	Expire time.Time `json:"expire" gorm:"null;default:null"`
+}
+
+func (ut *UserToken) TableName() string {
+	return "user_tokens"
+}
+
 func init() {
 	db := config.GetDB()
 	_ = db.AutoMigrate(&User{})
 	_ = db.AutoMigrate(&UserSession{})
+	_ = db.AutoMigrate(&UserToken{})
 }

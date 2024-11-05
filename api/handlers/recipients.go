@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"ses-go/api/schemas"
 	"ses-go/config"
 	"ses-go/models"
@@ -8,49 +9,6 @@ import (
 
 	"github.com/gofiber/fiber/v3"
 )
-
-// InitRecipientsDataHandler 수신자 데이터 초기화 핸들러
-func InitRecipientsDataHandler(c fiber.Ctx) error {
-	// 기본 컬럼은 email
-	columns := []string{"email"}
-
-	// DB 연결 가져오기
-	db := config.GetDB()
-
-	// 템플릿 모델 변수 선언
-	var template models.Template
-
-	// URL 파라미터에서 템플릿 ID를 가져와 DB에서 해당 템플릿 조회
-	templateId := c.Params("templateId")
-	templateIdUint, _ := strconv.Atoi(templateId)
-	if err := db.Where("id = ?", templateIdUint).First(&template).Error; err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-	}
-
-	// 템플릿에서 파라미터 가져오기
-	params := template.GetParams()
-
-	// 기본 컬럼에 템플릿 파라미터 추가
-	columns = append(columns, *params...)
-
-	// 수신자 데이터 초기화 (헤더 포함 11행)
-	recipients := [][]string{
-		columns,
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-		make([]string, len(columns)),
-	}
-	return c.JSON(schemas.RespInitRecipientsData{
-		Data: recipients,
-	})
-}
 
 // CreateRecipientHandler 수신자 생성 핸들러
 func CreateRecipientHandler(c fiber.Ctx) error {
@@ -67,9 +25,19 @@ func CreateRecipientHandler(c fiber.Ctx) error {
 	templateIdUint, _ := strconv.Atoi(templateId)
 	// 수신자 모델 생성
 	user := fiber.Locals[models.User](c, "user")
+	data := body.Data
+	// email 이 없는 경우 제외
+	recipients := [][]string{}
+	for _, row := range data {
+		if row[0] == "" {
+			continue
+		}
+		recipients = append(recipients, row)
+	}
+	jsonData, _ := json.Marshal(recipients)
 	recipient := models.Recipient{
 		TemplateId: uint(templateIdUint),
-		Data:       body.Data,
+		Data:       string(jsonData),
 		CreatorId:  user.ID,
 	}
 	// DB에 수신자 데이터 저장

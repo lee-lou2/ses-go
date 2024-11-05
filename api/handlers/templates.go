@@ -50,3 +50,20 @@ func UpdateTemplateHandler(c fiber.Ctx) error {
 		Id: template.ID,
 	})
 }
+
+// GetTemplateFieldsHandler 템플릿 필드 조회 핸들러
+func GetTemplateFieldsHandler(c fiber.Ctx) error {
+	db := config.GetDB()
+	templateId := c.Params("templateId")
+	templateIdUint, _ := strconv.Atoi(templateId)
+	var template models.Template
+	if err := db.First(&template, templateIdUint).Error; err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	fields := []string{"email"}
+	params := template.GetParams()
+	fields = append(fields, *params...)
+	return c.JSON(schemas.RespGetTemplateFields{
+		Fields: fields,
+	})
+}

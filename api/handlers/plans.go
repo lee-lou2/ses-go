@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"ses-go/api/schemas"
 	"ses-go/config"
 	"ses-go/models"
@@ -14,7 +13,6 @@ import (
 func CreatePlanHandler(c fiber.Ctx) error {
 	body := new(schemas.ReqCreatePlan)
 	if err := c.Bind().JSON(&body); err != nil {
-		fmt.Println(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	db := config.GetDB()

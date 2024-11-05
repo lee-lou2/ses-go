@@ -44,6 +44,10 @@
 
     function createTemplate() {
         const templateInput = document.getElementById("template-input");
+        if (!templateInput.value.trim()) {
+            alert("템플릿 이름을 입력해주세요.");
+            return;
+        }
         fetch('/v1/plans/templates', {
             method: 'POST',
             headers: {
@@ -67,12 +71,23 @@
 
     function selectTemplate() {
         const templateSelect = document.getElementById("template-select");
+        if (templateSelect.value === "") {
+            alert("Please select a template!");
+            return;
+        }
+        if (selectedTemplateId === templateSelect.value) {
+            return;
+        }
         selectedTemplateId = templateSelect.value;
         const selectedText = templateSelect.options[templateSelect.selectedIndex].text;
 
         if (selectedTemplateId) {
             document.getElementById("selected-template").innerText = `Selected Template: ${selectedText}`;
             document.getElementById("template-action-buttons").style.display = "block";
+            document.getElementById("edit-template-btn").style.display = "block";
+            document.getElementById('recipients').innerHTML = '';
+            hot = null;
+            document.getElementById("plan-section").style.display = "none";
         } else {
             alert("Please select a template!");
         }
@@ -96,6 +111,10 @@
 
     function createPlan() {
         const planTitle = document.getElementById("plan-title").value;
+        if (!planTitle.trim()) {
+            alert("계획 제목을 입력해주세요.");
+            return;
+        }
         let scheduledAt = document.getElementById("scheduled-at").value;
         if (!scheduledAt) {
             scheduledAt = null;
@@ -125,18 +144,25 @@
     }
 
     function setDefaultData() {
-        // /v1/plans/templates/{templateId}/recipients/ 로 데이터 조회
         if (selectedTemplateId) {
-            fetch(`${window.location.origin}/v1/plans/templates/${selectedTemplateId}/recipients`)
+            fetch(`${window.location.origin}/v1/plans/templates/${selectedTemplateId}/fields`)
                 .then(response => response.json())
             .then(data => {
                 // 최대 열 수 계산
-                const maxCols = data.data[0].length;
-
-                // Handsontable 초기화
+                const maxCols = data.fields.length;
+                const dataset = []
+                const columns = []
+                for (let i = 0; i < maxCols; i++) {
+                    columns.push(data.fields[i])
+                }
+                dataset.push(columns)
+                // 10 개의 빈 행 추가
+                for (let i = 0; i < 10; i++) {
+                    dataset.push(Array(maxCols).fill(""))
+                }
                 const container = document.getElementById('recipients');
                 hot = new Handsontable(container, {
-                data: data.data,
+                data: dataset,
                 rowHeaders: true,
                 colHeaders: true,
                 contextMenu: true,
@@ -161,11 +187,14 @@
       fetch(`/v1/plans/templates/${selectedTemplateId}/recipients`, {
         method: 'POST',
         body: JSON.stringify({
-          data: JSON.stringify(data)
+          data: data
         })
       }).then(res => res.json()).then(data => {
         selectedRecipientId = data.id;
         document.getElementById("plan-action-buttons").style.display = "block";
+      }).catch(error => {
+        console.error('Error:', error);
+        alert('오류가 발생했습니다: ' + error.message);
       });
     }
 

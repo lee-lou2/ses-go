@@ -2,12 +2,14 @@ package ses
 
 import (
 	"context"
+	"ses-go/config"
+	"time"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
-	"ses-go/config"
 )
 
 // SendEmail 함수는 이메일을 발송
@@ -45,7 +47,9 @@ func SendEmail(subject, body *string, receivers *[]string) (string, error) {
 			},
 		},
 	}
-	result, err := client.SendEmail(context.TODO(), input)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	result, err := client.SendEmail(ctx, input)
 	if err != nil {
 		return "", err
 	}

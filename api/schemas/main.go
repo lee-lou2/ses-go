@@ -42,10 +42,10 @@ type ReqAddSendEvent struct {
 
 // ReqCreateRecipients 수신자 생성 요청
 type ReqCreateRecipients struct {
-	Data string `json:"data"`
+	Data [][]string `json:"data"`
 }
 
-// RespInitRecipientsData 수신자 초기화 응답
-type RespInitRecipientsData struct {
-	Data [][]string `json:"data"`
+// RespGetTemplateFields 템플릿 필드 조회 응답
+type RespGetTemplateFields struct {
+	Fields []string `json:"fields"`
 }
