@@ -23,15 +23,15 @@ func SetV1Routes(app *fiber.App) {
 			event.Get("/open", handlers.AddOpenEventHandler)
 			event.Post("/send", handlers.AddSendEventHandler)
 		}
-		plan := v1.Group("/plans")
+		plan := v1.Group("/plans", middlewares.SessionOrTokenAuthenticate)
 		{
-			plan.Post("/", middlewares.SessionOrTokenAuthenticate, handlers.CreatePlanHandler)
+			plan.Post("/", handlers.CreatePlanHandler)
 			template := plan.Group("/templates")
 			{
-				template.Post("/", middlewares.SessionAuthenticate, handlers.CreateTemplateHandler)
-				template.Put("/:templateId", middlewares.SessionAuthenticate, handlers.UpdateTemplateHandler)
-				template.Get("/:templateId/fields", middlewares.SessionAuthenticate, handlers.GetTemplateFieldsHandler)
-				template.Post("/:templateId/recipients", middlewares.SessionOrTokenAuthenticate, handlers.CreateRecipientHandler)
+				template.Post("/", handlers.CreateTemplateHandler)
+				template.Put("/:templateId", handlers.UpdateTemplateHandler)
+				template.Get("/:templateId/fields", handlers.GetTemplateFieldsHandler)
+				template.Post("/:templateId/recipients", handlers.CreateRecipientHandler)
 			}
 		}
 	}

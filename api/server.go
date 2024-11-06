@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 	"github.com/gofiber/fiber/v3/middleware/pprof"
+	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/requestid"
 	"github.com/gofiber/template/html/v2"
 )
@@ -26,6 +27,7 @@ func Run() {
 		TimeZone:   "Local",
 	}))
 	app.Use(pprof.New())
+	app.Use(recoverer.New())
 
 	// Routes
 	routes.SetV1Routes(app)

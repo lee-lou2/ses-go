@@ -16,9 +16,11 @@ func CreateTemplateHandler(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	db := config.GetDB()
+	user := c.Locals("user").(*models.User)
 	template := models.Template{
-		Subject: body.Subject,
-		Body:    "",
+		Subject:   body.Subject,
+		Body:      "",
+		CreatorId: user.ID,
 	}
 	// 데이터 생성
 	if err := db.Create(&template).Error; err != nil {
@@ -36,11 +38,15 @@ func UpdateTemplateHandler(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	db := config.GetDB()
+	user := c.Locals("user").(*models.User)
 	var template models.Template
 	templateId := c.Params("templateId")
 	templateIdUint, _ := strconv.Atoi(templateId)
 	if err := db.First(&template, templateIdUint).Error; err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	if template.CreatorId != user.ID {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "권한이 없습니다."})
 	}
 	template.Body = body.Body
 	if err := db.Save(&template).Error; err != nil {

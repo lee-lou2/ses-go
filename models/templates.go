@@ -1,15 +1,18 @@
 package models
 
 import (
-	"gorm.io/gorm"
 	"regexp"
 	"ses-go/config"
+
+	"gorm.io/gorm"
 )
 
 type Template struct {
 	gorm.Model
-	Subject string `json:"subject" gorm:"not null;type:varchar(255)"`
-	Body    string `json:"body" gorm:"not null;type:text"`
+	Subject   string `json:"subject" gorm:"not null;type:varchar(255)"`
+	Body      string `json:"body" gorm:"not null;type:text"`
+	CreatorId uint   `json:"creator_id" gorm:"not null"`
+	Creator   User   `json:"creator" gorm:"foreignKey:CreatorId"`
 }
 
 func (t *Template) TableName() string {
