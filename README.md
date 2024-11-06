@@ -13,6 +13,8 @@
 - AWS SNS(발송 결과 조회)
 - handsontable(발송 대상 관리)
 - Google OAuth2(구글 로그인)
+- TinyMCE(이메일 템플릿 에디터)
+- JWT(API 인증)
 
 ## 사용 기술
 
@@ -77,6 +79,14 @@
 ### 발송 결과
 
 - AWS SES 결과를 SNS로 받아 Https로 직접 만든 API에서 받아서 저장
+- 이메일 열람 추적을 위한 투명 이미지 픽셀 추가
+- 발송 상태 세분화 (생성 완료, 전송 완료, 실패, 중지 등)
+
+### API 인증
+
+- JWT 토큰 기반의 API 인증 지원
+- 세션 또는 토큰 기반의 인증 방식 선택 가능
+- API 토큰 관리 기능 제공
 
 ## 이메일 발송 방법
 
@@ -94,6 +104,12 @@ AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 EMAIL_SENDER=
 
+# SMTP 설정
+EMAIL_SMTP_HOST=
+EMAIL_SMTP_PORT=
+EMAIL_USERNAME=
+EMAIL_PASSWORD=
+
 # 구글 OAuth2 설정
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
@@ -101,6 +117,9 @@ GOOGLE_REDIRECT_URL=
 
 # TinyMCE API Key
 TINYMCE_API_KEY=
+
+# JWT 설정
+JWT_SECRET=
 ```
 
 3. 서버 실행

@@ -1,4 +1,4 @@
-package ses
+package notify
 
 import (
 	"context"
@@ -12,8 +12,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sesv2/types"
 )
 
-// SendEmail 함수는 이메일을 발송
-func SendEmail(subject, body *string, receivers *[]string) (string, error) {
+// SendSESEmail 이메일 발송
+func SendSESEmail(subject, body *string, receivers *[]string) (string, error) {
+	if config.GetEnv("AWS_ACCESS_KEY_ID") == "" {
+		return SendSMTPEmail(subject, body, receivers)
+	}
 	// AWS Config 로드
 	server := config.EmailServer
 	AccessKeyId := config.GetEnv("AWS_ACCESS_KEY_ID")

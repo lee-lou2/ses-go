@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"ses-go/cmd/post_send"
 	"ses-go/config"
-	"ses-go/pkg/ses"
+	"ses-go/pkg/notify"
 	"strconv"
 	"strings"
 	"time"
@@ -50,7 +50,7 @@ func Run() {
 				// body 마지막에 열림 이벤트를 위한 코드 추가
 				serverHost := config.GetEnv("SERVER_HOST", "http://localhost:3000")
 				body += `<img src="` + serverHost + `/v1/events/open/?message_id=` + strconv.Itoa(m.MessageId) + `">`
-				msgId, err := ses.SendEmail(
+				msgId, err := notify.SendSESEmail(
 					&m.Template.Subject,
 					&body,
 					&[]string{m.To},
