@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"log"
 	"ses-go/api/routes"
+	"ses-go/config"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/logger"
@@ -33,5 +35,5 @@ func Run() {
 	routes.SetV1Routes(app)
 	routes.SetTemplateRoutes(app)
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(fmt.Sprintf(":%s", config.GetEnv("SERVER_PORT"))))
 }

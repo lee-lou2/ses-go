@@ -98,6 +98,7 @@
 # .env
 # 서버 기본 설정
 SERVER_HOST=
+SERVER_PORT=3000
 
 # AWS 설정
 AWS_ACCESS_KEY_ID=
