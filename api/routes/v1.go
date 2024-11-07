@@ -9,8 +9,8 @@ import (
 
 // SetV1Routes V1 라우터
 func SetV1Routes(app *fiber.App) {
-	app.Get("/v1/auth/google/", handlers.GoogleAuthHandler)
-	app.Get("/v1/auth/google/callback/", handlers.GoogleCallbackHandler)
+	app.Get("/v1/auth/google", handlers.GoogleAuthHandler)
+	app.Get("/v1/auth/google/callback", handlers.GoogleCallbackHandler)
 	app.Get("/v1/events/open", handlers.AddOpenEventHandler)
 	app.Post("/v1/events/send", handlers.AddSendEventHandler)
 
@@ -21,7 +21,7 @@ func SetV1Routes(app *fiber.App) {
 	}
 	plan := app.Group("/v1/plans", middlewares.SessionOrTokenAuthenticate)
 	{
-		plan.Post("/", handlers.CreatePlanHandler)
+		plan.Post("", handlers.CreatePlanHandler)
 		plan.Post("/templates", handlers.CreateTemplateHandler)
 		plan.Put("/templates/:templateId", handlers.UpdateTemplateHandler)
 		plan.Get("/templates/:templateId/fields", handlers.GetTemplateFieldsHandler)

@@ -10,14 +10,17 @@ import (
 // SetTemplateRoutes 템플릿 라우터
 func SetTemplateRoutes(app *fiber.App) {
 	app.Get("/accounts/login", handlers.LoginHTMLRenderHandler)
-	template := app.Group("", middlewares.SessionAuthenticate)
+	app.Get("/", middlewares.SessionAuthenticate, handlers.IndexHTMLRenderHandler)
+	plans := app.Group("/plans", middlewares.SessionAuthenticate)
 	{
-		template.Get("/", handlers.IndexHTMLRenderHandler)
-		template.Get("/plans", handlers.PlanCreateHTMLRenderHandler)
-		template.Get("/plans/templates/:templateId/recipients/:recipientId", handlers.GetRecipientsHTMLRenderHandler)
-		template.Get("/plans/templates/:templateId", handlers.TemplateDetailHTMLRenderHandler)
-		template.Get("/plans/:planId", handlers.PlanDetailHTMLRenderHandler)
-		template.Get("/plans/:planId/result", handlers.PlanResultHTMLRenderHandler)
-		template.Get("/tokens", handlers.TokenHTMLRenderHandler)
+		plans.Get("", handlers.PlanCreateHTMLRenderHandler)
+		plans.Get("/templates/:templateId/recipients/:recipientId", handlers.GetRecipientsHTMLRenderHandler)
+		plans.Get("/templates/:templateId", handlers.TemplateDetailHTMLRenderHandler)
+		plans.Get("/:planId", handlers.PlanDetailHTMLRenderHandler)
+		plans.Get("/:planId/result", handlers.PlanResultHTMLRenderHandler)
+	}
+	token := app.Group("/tokens", middlewares.SessionAuthenticate)
+	{
+		token.Get("", handlers.TokenHTMLRenderHandler)
 	}
 }
