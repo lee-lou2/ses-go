@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"fmt"
 	"ses-go/cmd/accounts"
 	"ses-go/config"
 	"ses-go/models"
@@ -34,6 +35,7 @@ func ValidateSession(c fiber.Ctx) bool {
 
 // SessionAuthenticate 세션 인증
 func SessionAuthenticate(c fiber.Ctx) error {
+	fmt.Println("SessionAuthenticate")
 	if !ValidateSession(c) {
 		return c.Redirect().To("/accounts/login")
 	}

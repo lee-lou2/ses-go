@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"ses-go/cmd/accounts"
 	"ses-go/models"
 
@@ -10,6 +11,7 @@ import (
 // CreateTokenHandler 토큰 생성 핸들러
 func CreateTokenHandler(c fiber.Ctx) error {
 	user := fiber.Locals[models.User](c, "user")
+	fmt.Println(user)
 	token, err := accounts.GetToken(user.ID)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
