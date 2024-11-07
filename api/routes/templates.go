@@ -10,7 +10,7 @@ import (
 // SetTemplateRoutes 템플릿 라우터
 func SetTemplateRoutes(app *fiber.App) {
 	app.Get("/accounts/login", handlers.LoginHTMLRenderHandler)
-	app.Get("/", middlewares.SessionAuthenticate, handlers.IndexHTMLRenderHandler)
+	app.Use(middlewares.SessionAuthenticate).Get("/", handlers.IndexHTMLRenderHandler)
 	plans := app.Group("/plans", middlewares.SessionAuthenticate)
 	{
 		plans.Get("", handlers.PlanCreateHTMLRenderHandler)
