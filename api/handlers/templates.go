@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"ses-go/api/schemas"
 	"ses-go/config"
 	"ses-go/models"
@@ -16,7 +17,8 @@ func CreateTemplateHandler(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	db := config.GetDB()
-	user := c.Locals("user").(*models.User)
+	user := fiber.Locals[models.User](c, "user")
+	fmt.Println(user)
 	template := models.Template{
 		Subject:   body.Subject,
 		Body:      "",
@@ -38,7 +40,7 @@ func UpdateTemplateHandler(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	db := config.GetDB()
-	user := c.Locals("user").(*models.User)
+	user := fiber.Locals[models.User](c, "user")
 	var template models.Template
 	templateId := c.Params("templateId")
 	templateIdUint, _ := strconv.Atoi(templateId)
